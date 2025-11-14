@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Encrypt/Decrypt</title>
+    <style>
+        body {
+            font-family: "Times New Roman", serif;
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #2d2d2d 100%);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        header {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        nav a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+
+        nav a:hover {
+            color: #f59e0b;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .drop-area {
+            border: 2px dashed #ccc;
+            padding: 40px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 8px;
+            text-align: center;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(0, 0, 0, 0.3) 100%);
+            box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+
+        .drop-area.dragover {
+            border-color: #f59e0b;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(0, 0, 0, 0.4) 100%);
+            box-shadow: inset 0 0 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .file-info {
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        input[type="password"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        #encrypt-btn {
+            background-color: #28a745;
+            color: white;
+        }
+
+        #decrypt-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        button:hover {
+            opacity: 0.8;
+            transform: scale(1.05);
+        }
+
+        .status {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #f59e0b;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        footer {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .about-block {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            animation: slideIn 0.8s ease-out forwards;
+            opacity: 0;
+        }
+
+        .about-block:nth-child(1) { animation-delay: 0.2s; }
+        .about-block:nth-child(2) { animation-delay: 0.4s; }
+        .about-block:nth-child(3) { animation-delay: 0.6s; }
+        .about-block:nth-child(4) { animation-delay: 0.8s; }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-50px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .about-block h2 {
+            margin-top: 0;
+            color: #f59e0b;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="#" onclick="showPage('home')">
+                <svg class="logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2L3 7V17L12 22L21 17V7L12 2Z" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M12 2V22" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M3 7L12 12L21 7" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M7 9.5V14.5L12 17L17 14.5V9.5" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                SecureEncrypt
+            </a>
+            <ul style="display: flex; list-style: none; gap: 1rem;">
+                <li><a href="#" onclick="showPage('home')">Home</a></li>
+                <li><a href="#" onclick="showPage('about')">About</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div id="home" class="page active fade-in">
+            <h1>File Encryption & Decryption Tool</h1>
+            <div id="drop-area" class="drop-area">
+                <p>Drag and drop a file here or <span id="file-input-label">click to select</span></p>
+                <input type="file" id="file-input" hidden>
+            </div>
+            <div id="file-info" class="file-info" style="display: none;">
+                <p>Selected file: <span id="file-name"></span></p>
+            </div>
+            <input type="password" id="password" placeholder="Enter password" required>
+            <div class="buttons">
+                <button id="encrypt-btn">Encrypt</button>
+                <button id="decrypt-btn">Decrypt</button>
+            </div>
+            <button id="submit-btn">Submit</button>
+            <div id="status" class="status"></div>
+            <a id="download-link" style="display: none;" class="fade-in">Download File</a>
+        </div>
+
+        <div id="about" class="page fade-in">
+            <h1>About SecureEncrypt</h1>
+            <div class="about-block">
+                <h2>What is SecureEncrypt?</h2>
+                <p>SecureEncrypt is a powerful tool designed to protect your sensitive files through advanced encryption and decryption processes. It ensures your data remains confidential and secure from unauthorized access.</p>
+            </div>
+            <div class="about-block">
+                <h2>Encryption Algorithms</h2>
+                <p>We utilize industry-standard algorithms like AES-256 for symmetric encryption, providing robust protection. AES-256 is widely recognized for its strength and is used by governments and organizations worldwide.</p>
+            </div>
+            <div class="about-block">
+                <h2>Security Assurance</h2>
+                <p>Your files are processed locally or securely on our server, with no permanent storage. Password-based encryption ensures only you can access your data. We prioritize privacy and compliance with data protection standards.</p>
+            </div>
+            <div class="about-block">
+                <h2>How to Use</h2>
+                <p>1. Select or drag a file into the upload area. 2. Enter a strong password. 3. Choose Encrypt or Decrypt. 4. Click Submit to process. 5. Download the result securely.</p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2023 SecureEncrypt. All rights reserved.</p>
+    </footer>
+
+    <script>
+        let selectedFile = null;
+        let isEncrypt = true;
+        let isLoading = false;
+
+        const dropArea = document.getElementById('drop-area');
+        const fileInput = document.getElementById('file-input');
+        const fileInfo = document.getElementById('file-info');
+        const fileName = document.getElementById('file-name');
+        const passwordInput = document.getElementById('password');
+        const encryptBtn = document.getElementById('encrypt-btn');
+        const decryptBtn = document.getElementById('decrypt-btn');
+        const submitBtn = document.getElementById('submit-btn');
+        const statusDiv = document.getElementById('status');
+        const downloadLink = document.getElementById('download-link');
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+        }
+
+        dropArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropArea.classList.add('dragover');
+        });
+
+        dropArea.addEventListener('dragleave', () => {
+            dropArea.classList.remove('dragover');
+        });
+
+        dropArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        dropArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileInfo.style.display = 'block';
+            statusDiv.textContent = '';
+        }
+
+        encryptBtn.addEventListener('click', () => {
+            isEncrypt = true;
+            encryptBtn.style.backgroundColor = '#28a745';
+            decryptBtn.style.backgroundColor = '#dc3545';
+        });
+
+        decryptBtn.addEventListener('click', () => {
+            isEncrypt = false;
+            decryptBtn.style.backgroundColor = '#28a745';
+            encryptBtn.style.backgroundColor = '#dc3545';
+        });
+
+        submitBtn.addEventListener('click', async () => {
+            if (!selectedFile || !passwordInput.value) {
+                statusDiv.textContent = 'Please select a file and enter a password.';
+                return;
+            }
+            isLoading = true;
+            submitBtn.innerHTML = '<div class="loading"></div> Processing...';
+            submitBtn.disabled = true;
+
+            const endpoint = isEncrypt ? '/encrypt' : '/decrypt';
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('password', passwordInput.value);
+
+            try {
+                const response = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Error: ${response.statusText}`);
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                downloadLink.href = url;
+                downloadLink.download = `${isEncrypt ? 'encrypted' : 'decrypted'}_${selectedFile.name}`;
+                downloadLink.style.display = 'block';
+                statusDiv.textContent = `${isEncrypt ? 'Encrypted' : 'Decrypted'} successful!`;
+            } catch (error) {
+                statusDiv.textContent = `Error: ${error.message}`;
+            } finally {
+                isLoading = false;
+                submitBtn.innerHTML = 'Submit';
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+     <!-- React (UMD) from CDN so this tiny static UI works without a build step -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+
+    <!-- App script -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
